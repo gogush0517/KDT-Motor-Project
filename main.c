@@ -26,7 +26,8 @@ volatile int Key_Pressed;
 volatile int Key_Released;
 volatile int Uart_Pressed;
 volatile unsigned char Uart_Data;
-
+volatile int TIM4_Expired = 0;      // 이번 누름에서 2초가 지났는지
+volatile int Key_Long_Pressed = 0;  // 버튼을 뗀 순간 확정한 결과
 void Uart_Check(void) {
 	if(Uart_Pressed) {
 		if(Uart_Data >= '1' && Uart_Data <= '9') { Motor_Speed = Uart_Data - '0'; }
@@ -37,26 +38,28 @@ void Uart_Check(void) {
 }
 
 static void Key_Check(void){
+
+	// 버튼 ISR이 값을 바꾸는 중간에 읽지 않도록 잠깐 차단
+    NVIC_DisableIRQ(EXTI15_10_IRQn);
+
 	if(Key_Pressed) {
-		Macro_Set_Bit(TIM4->EGR,0);
-		Macro_Set_Bit(TIM4->CR1,0);
-		printf("Key Pressed!!\n");
 
 		Key_Pressed = 0;
 	}
 	if(Key_Released) {
-		Macro_Clear_Bit(TIM4->CR1, 0);
-		if(TIM4->SR & 1) {
-			if(Motor_State == 0) Motor_State = 1;
-			else Motor_State = 0;
+
+		if(Key_Long_Pressed) {
+			if(Motor_State == STOP) Motor_State = CW;
+			else Motor_State = STOP;
 		}
 		else {
 			Macro_Invert_Bit(LED_State, 0);
-			if(Motor_State == 1) Motor_State = 2;
-			else if(Motor_State == 2) Motor_State = 1;
+			if(Motor_State == CW) Motor_State = CCW;
+			else if(Motor_State == CCW) Motor_State = CW;
 		}
 		Key_Released = 0;
 	}
+	NVIC_EnableIRQ(EXTI15_10_IRQn); 
 }
 
 static void Motor_Init(void) {
