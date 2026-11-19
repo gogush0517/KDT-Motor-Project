@@ -52,6 +52,7 @@ void Key_ISR_Enable(int en)
 		Macro_Write_Block(SYSCFG->EXTICR[3], 0xf, 0x2, 4);
 
 		Macro_Set_Bit(EXTI->FTSR, 13);
+		Macro_Set_Bit(EXTI->RTSR, 13);
 		EXTI->PR = 0x1 << 13;
 		
 		NVIC_ClearPendingIRQ((IRQn_Type)40);

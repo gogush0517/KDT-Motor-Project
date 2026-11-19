@@ -16,11 +16,14 @@ extern volatile unsigned char Uart_Data;
 
 void EXTI15_10_IRQHandler(void)
 {
+	printf("interrupted\n");
 	if(Macro_Check_Bit_Clear(GPIOC->IDR, 13)){
 		Key_Pressed = 1;
+		printf("pressed\n");
 	}
 	else {
 		Key_Released = 1;
+		printf("released\n");
 	}
 
 	EXTI->PR = 0x1 << 13;

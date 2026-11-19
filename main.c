@@ -4,7 +4,6 @@
 #define	PA0	(0)
 #define PA1 (1)
 
-
 #define STOP	(0)
 #define CW		(1)
 #define	CCW		(2)
@@ -34,7 +33,6 @@ void Uart_Check(void) {
 		else if(Uart_Data == 'S' || Uart_Data == 's'){ Motor_State = STOP; }
 		else if(Uart_Data == 'F' || Uart_Data == 'f'){ Motor_State = CW; }
 		else if(Uart_Data == 'R' || Uart_Data == 'r'){ Motor_State = CCW; }
-		else { break; }
 	}
 }
 
@@ -42,6 +40,7 @@ static void Key_Check(void){
 	if(Key_Pressed) {
 		Macro_Set_Bit(TIM4->EGR,0);
 		Macro_Set_Bit(TIM4->CR1,0);
+		printf("Key Pressed!!\n");
 
 		Key_Pressed = 0;
 	}
@@ -89,10 +88,12 @@ static void Key_Timer_Init() {	// TIM4
 		NVIC_EnableIRQ((IRQn_Type)30);
 }
 
-
 static void Motor_Timer_Init() {	// TIM2
-	// TIM4 Clock On
+	// TIM2 Clock On
 		Macro_Set_Bit(RCC->APB1ENR, 0);
+
+		Macro_Write_Block(GPIOA->MODER,0xf,0xA,0);
+		Macro_Write_Block(GPIOA->AFR[0],0xff,0x11,0);
 
 		TIM2->CR1 = (1<<4)|(0<<3);
 		TIM2->PSC = (unsigned int)(TIMXCLK/(double)TIM2_FREQ + 0.5)-1;
@@ -103,20 +104,12 @@ static void Motor_Timer_Init() {	// TIM2
 		TIM2->CCR1 =0;
 		TIM2->CCR2 =0;
 		
-		Macro_Write_Block(TIM2->CCER,0x3,0x1,0);  //p.189 채널1(PA0) 극성과 on/off
-    	Macro_Write_Block(TIM2->CCER,0x3,0x1,4);  //p.189 채널2(PA1) 극성과 on/off
+		Macro_Write_Block(TIM2->CCER,0x3,0x1,0);
+    	Macro_Write_Block(TIM2->CCER,0x3,0x1,4);
 
 		Macro_Set_Bit(TIM2->EGR,0);
 
-		// TIM4 Pending Clear
-		// NVIC Pending Clear
-		Macro_Clear_Bit(TIM2->SR, 0);
-		NVIC_ClearPendingIRQ((IRQn_Type)28);
-
-		// TIM4 Interrupt Enable
-		// NVIC Interrupt Enable
-		Macro_Set_Bit(TIM2->DIER, 0);
-		NVIC_EnableIRQ((IRQn_Type)28);
+		Macro_Set_Bit(TIM2->CR1, 0);
 }
 
 static void Event_Handler(void) {
@@ -124,9 +117,14 @@ static void Event_Handler(void) {
 	Uart_Check();
 }
 
+int Motor_Set_CCR(void){
+    return (24 + 25*(Motor_Speed -1)/8);
+}
+
 void Motor_Stop(){
 	if(Macro_Extract_Area(GPIOA->ODR, 0x3, 0)==Motor_State) return;
-    Macro_Clear_Area(GPIOA->ODR, 0x3, 0);
+    TIM2->CCR1 = 0;
+	TIM2->CCR2 = 0;
 }
 
 void Motor_Cw(){
@@ -134,7 +132,8 @@ void Motor_Cw(){
     if(Macro_Extract_Area(GPIOA->ODR, 0x3, 0)==Motor_State) return;
     Motor_Stop();
     for(i=0; i<0x80000; i++);
-    Macro_Write_Block(GPIOA->ODR, 0x3, 0x1, 0);
+    TIM2->CCR1 = Motor_Set_CCR();
+	TIM2->CCR2 = 0;
 }
 
 void Motor_CCw(){
@@ -142,7 +141,8 @@ void Motor_CCw(){
     if(Macro_Extract_Area(GPIOA->ODR, 0x3, 0)==Motor_State) return;
     Motor_Stop();
     for(i=0; i<0x80000; i++);
-    Macro_Write_Block(GPIOA->ODR, 0x3, 0x2, 0);
+    TIM2->CCR1 = 0;
+	TIM2->CCR2 = Motor_Set_CCR();
 }
 
 void Op_Handler(){
@@ -156,6 +156,10 @@ void Op_Handler(){
 static void Total_Init(void) {
 	Key_Poll_Init();
 	Motor_Init();
+	Key_Timer_Init();
+	Motor_Timer_Init();
+	Key_ISR_Enable(1);
+	Uart2_RX_Interrupt_Enable(1);
 }
 
 static void Sys_Init(int baud) 
