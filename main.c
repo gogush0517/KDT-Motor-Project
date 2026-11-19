@@ -9,6 +9,17 @@
 #define CW		(1)
 #define	CCW		(2)
 
+#define TIM4_TICK	  		(50) 					// usec
+#define TIM4_FREQ 	  		(1000000./TIM4_TICK) 	// Hz
+#define TIME4_PLS_OF_1ms  	(1000./TIM4_TICK)
+#define TIM4_MAX	  		(39999)
+
+#define TIM2_TICK         	(1) 					// usec
+#define TIM2_FREQ 	  		(1000000./TIM2_TICK)	// Hz
+#define TIME2_PLS_OF_1ms  	(1000./TIM2_TICK)
+#define TIM2_MAX	  		(49) //50카운트
+
+
 int LED_State;
 int Motor_State;
 int Motor_Speed;
@@ -37,12 +48,24 @@ void Uart_Check(void) {
 }
 
 static void Key_Check(void){
-	int k;
-	if((k = Key_Get_Pressed()) != 0) {
-		Macro_Invert_Bit(LED_State, 0);
-		if(Motor_State == 1) Motor_State = 2;
-		else if(Motor_State == 2) Motor_State = 1;
-		Key_Wait_Key_Released();
+	if(Key_Pressed) {
+		Macro_Set_Bit(TIM4->EGR,0);
+		Macro_Set_Bit(TIM4->CR1,0);
+
+		Key_Pressed = 0;
+	}
+	if(Key_Released) {
+		Macro_Clear_Bit(TIM4->CR1, 0);
+		if(TIM4->SR & 1) {
+			if(Motor_State == 0) Motor_State = 1;
+			else Motor_State = 0;
+		}
+		else {
+			Macro_Invert_Bit(LED_State, 0);
+			if(Motor_State == 1) Motor_State = 2;
+			else if(Motor_State == 2) Motor_State = 1;
+		}
+		Key_Released = 0;
 	}
 }
 
@@ -53,16 +76,13 @@ static void Motor_Init(void) {
 	Macro_Clear_Bit(GPIOA->OTYPER, PA1);
 }
 
-#define TIM4_TICK	  		(20) 					// usec
-#define TIM4_FREQ 	  		(1000000./TIM4_TICK) 	// Hz
-#define TIME4_PLS_OF_1ms  	(1000./TIM4_TICK)
-#define TIM4_MAX	  		(0xffffu)
+
 
 static void Key_Timer_Init() {	// TIM4
 	// TIM4 Clock On
 		Macro_Set_Bit(RCC->APB1ENR, 2);
 
-		TIM4->CR1 = (1<<4)|(0<<3);
+		TIM4->CR1 = (1<<4)|(1<<3);
 		TIM4->PSC = (unsigned int)(TIMXCLK/(double)TIM4_FREQ + 0.5)-1;
 		TIM4->ARR = TIM4_MAX;
 		Macro_Set_Bit(TIM4->EGR,0);
@@ -78,10 +98,6 @@ static void Key_Timer_Init() {	// TIM4
 		NVIC_EnableIRQ((IRQn_Type)30);
 }
 
-#define TIM2_TICK         	(1) 					// usec
-#define TIM2_FREQ 	  		(1000000./TIM2_TICK)	// Hz
-#define TIME2_PLS_OF_1ms  	(1000./TIM2_TICK)
-#define TIM2_MAX	  		(49) //50카운트
 
 static void Motor_Timer_Init() {	// TIM2
 	// TIM4 Clock On
