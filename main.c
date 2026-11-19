@@ -29,21 +29,12 @@ volatile int Uart_Pressed;
 volatile unsigned char Uart_Data;
 
 void Uart_Check(void) {
-	char key;
-	if ((key = Uart2_Get_Pressed()) != 0/* && (Motor_State != 0)*/) {
-		switch (key) {
-			case 'S': case 's':
-				Motor_State = STOP;
-				break;
-			case 'F': case 'f':
-				Motor_State = CW;
-				break;
-			case 'R': case 'r':
-				Motor_State = CCW;
-				break;
-			default:
-				break;
-		}
+	if(Uart_Pressed) {
+		if(Uart_Data >= '1' && Uart_Data <= '9') { Motor_Speed = Uart_Data - '0'; }
+		else if(Uart_Data == 'S' || Uart_Data == 's'){ Motor_State = STOP; }
+		else if(Uart_Data == 'F' || Uart_Data == 'f'){ Motor_State = CW; }
+		else if(Uart_Data == 'R' || Uart_Data == 'r'){ Motor_State = CCW; }
+		else { break; }
 	}
 }
 
