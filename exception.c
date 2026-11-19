@@ -1,0 +1,38 @@
+#include "device_driver.h"
+#include <stdio.h>
+
+void _Invalid_ISR(void)
+{
+	unsigned int r = Macro_Extract_Area(SCB->ICSR, 0x1ff, 0);
+	printf("\nInvalid_Exception: %d!\n", r);
+	printf("Invalid_ISR: %d!\n", r - 16);
+	for(;;);
+}
+
+extern volatile int Key_Pressed;
+extern volatile int Key_Released;
+extern volatile int Uart_Pressed;
+extern volatile unsigned char Uart_Data;
+
+void EXTI15_10_IRQHandler(void)
+{
+	// if(macrocheckbitclear(gpioc->idr, 13))
+	Key_Pressed = 1;
+	// else
+	// key_released = 1;
+	//
+
+	EXTI->PR = 0x1 << 13;
+	NVIC_ClearPendingIRQ(40);
+}
+
+void USART2_IRQHandler(void)
+{
+	// if(Macro_Extract_Area(gpioa->odr, 2, 0))
+	Uart_Data = (unsigned char)USART2->DR;
+	Uart_Data_In = 1;
+	//
+
+
+	NVIC_ClearPendingIRQ(38);
+}
