@@ -28,11 +28,13 @@ void EXTI15_10_IRQHandler(void)
 
 void USART2_IRQHandler(void)
 {
-	// if(Macro_Extract_Area(gpioa->odr, 2, 0))
-	Uart_Data = (unsigned char)USART2->DR;
-	Uart_Data_In = 1;
-	//
+	int PA0 = Macro_Extract_Area(GPIOD->OTYPER, 0x1, 0); 
+	int PA1 = Macro_Extract_Area(GPIOD->OTYPER, 0x1, 1); 
 
-
+	if(PA0 ^= PA1) {
+		Uart_Data = (unsigned char)USART2->DR;
+		Uart_Pressed = 1;
+	}
+	
 	NVIC_ClearPendingIRQ(38);
 }
