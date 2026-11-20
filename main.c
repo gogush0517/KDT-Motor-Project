@@ -20,7 +20,8 @@
 
 
 int LED_State;
-int Motor_State;
+volatile int Motor_State;
+volatile int Safe_Key;
 int Motor_Speed=9;
 volatile int Key_Pressed;
 volatile int Key_Released;
@@ -28,13 +29,29 @@ volatile int Uart_Pressed;
 volatile unsigned char Uart_Data;
 volatile int TIM4_Expired = 0;      // 이번 누름에서 2초가 지났는지
 volatile int Key_Long_Pressed = 0;  // 버튼을 뗀 순간 확정한 결과
+volatile int Secret_Key;
+char Secret_Code[6] = "!sans";  // NULL 문자 포함
 void Uart_Check(void) {
-	if(Uart_Pressed) {
+	if(Uart_Pressed){
+		if(Uart_Data == Secret_Code[Secret_Key]) {
+			printf("Secret Key %d pressed!\n", Secret_Key + 1);
+			Secret_Key++;
+			if(Secret_Key == 4) {
+			printf("Secret Key Activated!\n");
+			Secret_Key = 0;
+			}
+		}
+		else {
+			Secret_Key = 0;
+		}
+	}
+	if(Uart_Pressed && (TIM2->CCR1 ^ TIM2->CCR2)) {
 		if(Uart_Data >= '1' && Uart_Data <= '9') { Motor_Speed = Uart_Data - '0'; }
 		else if(Uart_Data == 'S' || Uart_Data == 's'){ Motor_State = STOP; }
 		else if(Uart_Data == 'F' || Uart_Data == 'f'){ Motor_State = CW; }
 		else if(Uart_Data == 'R' || Uart_Data == 'r'){ Motor_State = CCW; }
 	}
+
 	Uart_Pressed = 0;
 }
 
@@ -50,7 +67,7 @@ static void Key_Check(void){
 	if(Key_Released) {
 
 		if(Key_Long_Pressed) {
-			if(Motor_State == STOP) Motor_State = CW;
+			if(Motor_State == STOP && Safe_Key==1) Motor_State = CW;
 			else Motor_State = STOP;
 		}
 		else {

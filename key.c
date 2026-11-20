@@ -58,6 +58,20 @@ void Key_ISR_Enable(int en)
 		NVIC_ClearPendingIRQ((IRQn_Type)40);
 		Macro_Set_Bit(EXTI->IMR, 13);
 		NVIC_EnableIRQ((IRQn_Type)40);
+
+		// PB5번 Safe_key
+		Macro_Set_Bit(RCC->AHB1ENR, 1); 
+		Macro_Write_Block(GPIOB->MODER, 0x3, 0x0, 10);
+
+		Macro_Write_Block(SYSCFG->EXTICR[1], 0xf, 0x1, 4); //PB5를 인터럽트로 설정
+		Macro_Set_Bit(EXTI->FTSR, 5);
+		Macro_Set_Bit(EXTI->RTSR, 5);
+
+		EXTI->PR = 0x1 << 5; //펜딩클
+		NVIC_ClearPendingIRQ((IRQn_Type)23);
+		Macro_Set_Bit(EXTI->IMR, 5);
+
+		NVIC_EnableIRQ((IRQn_Type)23);
 	}
 
 	else
@@ -65,3 +79,5 @@ void Key_ISR_Enable(int en)
 		NVIC_DisableIRQ((IRQn_Type)40);
 	}
 }
+
+
