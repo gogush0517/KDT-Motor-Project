@@ -19,14 +19,21 @@ extern volatile int Safe_Key;
 extern volatile int Motor_State;
 
 void EXTI9_5_IRQHandler(void){
-    if(Motor_State==0){
-        printf("누름\n");
-        Safe_Key = 1;   
+   if( Macro_Check_Bit_Set(GPIOB->IDR, 5)){
+            if(Motor_State==0){
+                printf("세이프키 1\n");
+                Safe_Key = 1;}
+            else{ 
+                printf("아무거나\n");
+                TIM2->CCR1 = 0;
+                TIM2->CCR2 = 0;
+                Motor_State = 0;  
+            }
     }
-    else {
-        printf("뗌\n");
-        Safe_Key = 0;
-    }
+   else{
+    printf("세이프키 0\n");
+    Safe_Key = 0;
+   }
     EXTI->PR = 0x1 << 5; //펜딩클
 	NVIC_ClearPendingIRQ((IRQn_Type)23);
 }
