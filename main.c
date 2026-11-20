@@ -20,7 +20,8 @@
 
 
 int LED_State;
-int Motor_State;
+volatile int Motor_State;
+volatile int Safe_Key;
 int Motor_Speed=9;
 volatile int Key_Pressed;
 volatile int Key_Released;
@@ -50,7 +51,7 @@ static void Key_Check(void){
 	if(Key_Released) {
 
 		if(Key_Long_Pressed) {
-			if(Motor_State == STOP) Motor_State = CW;
+			if(Motor_State == STOP && Safe_Key==1) Motor_State = CW;
 			else Motor_State = STOP;
 		}
 		else {

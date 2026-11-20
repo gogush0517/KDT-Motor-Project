@@ -15,6 +15,22 @@ extern volatile int Uart_Pressed;
 extern volatile unsigned char Uart_Data;
 extern volatile int TIM4_Expired;
 extern volatile int Key_Long_Pressed;
+extern volatile int Safe_Key;
+extern volatile int Motor_State;
+
+void EXTI9_5_IRQHandler(void){
+    if(Motor_State==0){
+        printf("누름\n");
+        Safe_Key = 1;   
+    }
+    else {
+        printf("뗌\n");
+        Safe_Key = 0;
+    }
+    EXTI->PR = 0x1 << 5; //펜딩클
+	NVIC_ClearPendingIRQ((IRQn_Type)23);
+}
+
 
 void EXTI15_10_IRQHandler(void)
 {
