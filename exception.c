@@ -18,8 +18,6 @@ extern volatile int Key_Long_Pressed;
 
 void EXTI15_10_IRQHandler(void)
 {
-
-
     // 타이머 설정 또는 판정 중에는 TIM4 인터럽트 차단
     NVIC_DisableIRQ((IRQn_Type)30);
     Macro_Clear_Bit(TIM4->DIER, 0);
@@ -67,11 +65,10 @@ void USART2_IRQHandler(void)
 	// int PA0 = Macro_Extract_Area(GPIOD->OTYPER, 0x1, 0); 
 	// int PA1 = Macro_Extract_Area(GPIOD->OTYPER, 0x1, 1); 
 
-	if(TIM2->CCR1 ^= TIM2->CCR2) {
-		Uart_Data = (unsigned char)USART2->DR;
+	if(TIM2->CCR1 ^ TIM2->CCR2) {
 		Uart_Pressed = 1;
 	}
-	
+	Uart_Data = (unsigned char)USART2->DR;
 	NVIC_ClearPendingIRQ(38);
 }
 

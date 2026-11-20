@@ -11,7 +11,7 @@
 #define TIM4_TICK	  		(50) 					// usec
 #define TIM4_FREQ 	  		(1000000./TIM4_TICK) 	// Hz
 #define TIME4_PLS_OF_1ms  	(1000./TIM4_TICK)
-#define TIM4_MAX	  		(39999)
+#define TIM4_PLS_OF_2s	  	(TIME4_PLS_OF_1ms*2000)
 
 #define TIM2_TICK         	(1) 					// usec
 #define TIM2_FREQ 	  		(1000000./TIM2_TICK)	// Hz
@@ -21,7 +21,7 @@
 
 int LED_State;
 int Motor_State;
-int Motor_Speed;
+int Motor_Speed=9;
 volatile int Key_Pressed;
 volatile int Key_Released;
 volatile int Uart_Pressed;
@@ -35,6 +35,7 @@ void Uart_Check(void) {
 		else if(Uart_Data == 'F' || Uart_Data == 'f'){ Motor_State = CW; }
 		else if(Uart_Data == 'R' || Uart_Data == 'r'){ Motor_State = CCW; }
 	}
+	Uart_Pressed = 0;
 }
 
 static void Key_Check(void){
@@ -63,13 +64,9 @@ static void Key_Check(void){
 }
 
 static void Motor_Init(void) {
-	Macro_Write_Block(GPIOA->MODER, 0x3, 0x1, PA0*2);
-	Macro_Write_Block(GPIOA->MODER, 0x3, 0x1, PA1*2);
-	Macro_Clear_Bit(GPIOA->OTYPER, PA0);
-	Macro_Clear_Bit(GPIOA->OTYPER, PA1);
+		Macro_Write_Block(GPIOA->MODER,0xf,0xA,0);
+		Macro_Write_Block(GPIOA->AFR[0],0xff,0x11,0);
 }
-
-
 
 static void Key_Timer_Init() {	// TIM4
 	// TIM4 Clock On
@@ -77,7 +74,7 @@ static void Key_Timer_Init() {	// TIM4
 
 		TIM4->CR1 = (1<<4)|(1<<3);
 		TIM4->PSC = (unsigned int)(TIMXCLK/(double)TIM4_FREQ + 0.5)-1;
-		TIM4->ARR = TIM4_MAX;
+		TIM4->ARR = TIM4_PLS_OF_2s;
 		Macro_Set_Bit(TIM4->EGR,0);
 
 		// TIM4 Pending Clear
@@ -94,9 +91,6 @@ static void Key_Timer_Init() {	// TIM4
 static void Motor_Timer_Init() {	// TIM2
 	// TIM2 Clock On
 		Macro_Set_Bit(RCC->APB1ENR, 0);
-
-		Macro_Write_Block(GPIOA->MODER,0xf,0xA,0);
-		Macro_Write_Block(GPIOA->AFR[0],0xff,0x11,0);
 
 		TIM2->CR1 = (1<<4)|(0<<3);
 		TIM2->PSC = (unsigned int)(TIMXCLK/(double)TIM2_FREQ + 0.5)-1;
@@ -121,43 +115,48 @@ static void Event_Handler(void) {
 }
 
 int Motor_Set_CCR(void){
-    return (24 + 25*(Motor_Speed -1)/8);
+    return (25 + 25*(Motor_Speed - 1)/8);
 }
 
 void Motor_Stop(){
-	if(Macro_Extract_Area(GPIOA->ODR, 0x3, 0)==Motor_State) return;
-    TIM2->CCR1 = 0;
+	TIM2->CCR1 = 0;
 	TIM2->CCR2 = 0;
 }
 
 void Motor_Cw(){
-	volatile int i;
-    if(Macro_Extract_Area(GPIOA->ODR, 0x3, 0)==Motor_State) return;
-    Motor_Stop();
-    for(i=0; i<0x80000; i++);
-    TIM2->CCR1 = Motor_Set_CCR();
+	TIM2->CCR1 = Motor_Set_CCR();
 	TIM2->CCR2 = 0;
 }
 
 void Motor_CCw(){
-	volatile int i;
-    if(Macro_Extract_Area(GPIOA->ODR, 0x3, 0)==Motor_State) return;
-    Motor_Stop();
-    for(i=0; i<0x80000; i++);
-    TIM2->CCR1 = 0;
+	TIM2->CCR1 = 0;
 	TIM2->CCR2 = Motor_Set_CCR();
 }
 
 void Op_Handler(){
+	volatile int i;
     LED_Display(LED_State);
 
-    Motor_Stop();
-    Motor_Cw();
-    Motor_CCw();
+	if (Motor_State == 0) {
+		Motor_Stop();
+	}
+	else if (Motor_State == 1) {
+		if (TIM2->CCR2 != 0) {
+			Motor_Stop();
+			for(i=0; i<0x80000; i++) {}
+		}
+		Motor_Cw();
+	}
+	else if (Motor_State == 2) {
+		if (TIM2->CCR1 != 0) {
+			Motor_Stop();
+			for(i=0; i<0x80000; i++) {}
+		}
+		Motor_CCw();
+	}
 }
 
 static void Total_Init(void) {
-	Key_Poll_Init();
 	Motor_Init();
 	Key_Timer_Init();
 	Motor_Timer_Init();
