@@ -17,6 +17,7 @@ extern volatile int TIM4_Expired;
 extern volatile int Key_Long_Pressed;
 extern volatile int Safe_Key;
 extern volatile int Motor_State;
+extern volatile int Motor_Speed;
 
 extern volatile int Estop_Buzzer;
 extern void Buzzer_On(int freq);
@@ -28,6 +29,7 @@ void EXTI9_5_IRQHandler(void) {
 		if (Motor_State != 0 && Macro_Check_Bit_Set(GPIOB->IDR, 5)) {
 			TIM2->CCR1 = 0;
 			TIM2->CCR2 = 0;
+			Motor_Speed = 1;
 			Motor_State = 0;
 			Estop_Buzzer = 1;
 		}

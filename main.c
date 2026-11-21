@@ -21,7 +21,7 @@
 
 int LED_State;
 volatile int Motor_State;
-int Motor_Speed = 1;
+volatile int Motor_Speed = 1;
 volatile int Key_Pressed;
 volatile int Key_Released;
 volatile int Uart_Pressed;
@@ -36,7 +36,7 @@ volatile int Estop_Buzzer = 0;
 void Uart_Check(void) {
 	if(Uart_Pressed) {
 		if(Uart_Data >= '1' && Uart_Data <= '9') { Motor_Speed = Uart_Data - '0'; }
-		else if(Uart_Data == 'S' || Uart_Data == 's'){ Motor_State = STOP; }
+		else if(Uart_Data == 'S' || Uart_Data == 's'){ Motor_State = STOP; Motor_Speed = 1; }
 		else if(Uart_Data == 'F' || Uart_Data == 'f'){ Motor_State = CW; }
 		else if(Uart_Data == 'R' || Uart_Data == 'r'){ Motor_State = CCW; }
 	Uart_Pressed = 0;
@@ -183,9 +183,9 @@ static void Ext_LED_Init(void) {
 	Macro_Clear_Bit(GPIOC->OTYPER, 7);
 	Macro_Clear_Bit(GPIOC->ODR, 7);
 
-	Macro_Write_Block(GPIOB->MODER, 0x3, 0x1, 6 * 2); // PB6 (D10, 빨강)
-	Macro_Clear_Bit(GPIOB->OTYPER, 6);
-	Macro_Clear_Bit(GPIOB->ODR, 6);
+	Macro_Write_Block(GPIOA->MODER, 0x3, 0x1, 6 * 2); // PB6 (D10, 빨강)
+	Macro_Clear_Bit(GPIOA->OTYPER, 6);
+	Macro_Clear_Bit(GPIOA->ODR, 6);
 }
 
 int Motor_Set_CCR(void){
@@ -232,18 +232,15 @@ static void Safe_Key_Init(void) {
 }
 
 static void Ext_LED_Display(void) {
-	// 초록(PA9): 정회전(CW)일 때만 ON
+
 	if (Motor_State == CW) Macro_Set_Bit(GPIOA->ODR, 9);
 	else Macro_Clear_Bit(GPIOA->ODR, 9);
 
-	// 노랑(PC7): 역회전(CCW)일 때만 ON
 	if (Motor_State == CCW) Macro_Set_Bit(GPIOC->ODR, 7);
 	else Macro_Clear_Bit(GPIOC->ODR, 7);
 	
-
-	// // 빨강(PB6): 세이프키(PB5)가 눌려 있는 동안만 ON
-	if (Macro_Check_Bit_Set(GPIOB->IDR, 5)) Macro_Set_Bit(GPIOB->ODR, 6);
-	else Macro_Clear_Bit(GPIOB->ODR, 6);
+	if (Macro_Check_Bit_Set(GPIOB->IDR, 5)) Macro_Set_Bit(GPIOA->ODR, 6);
+	else Macro_Clear_Bit(GPIOA->ODR, 6);
 }
 static void Buzzer_Init(void) {
 	// GPIOA, TIM3 클럭 ON
@@ -271,6 +268,38 @@ static void Buzzer_Init(void) {
 	Macro_Set_Bit(TIM3->CR1, 0);
 }
 
+static void I2C_LED_Display(void) {
+    static unsigned char prev_data = 0xFF;
+    static volatile int blink_cnt = 0;
+    static int blink_state = 0;
+    unsigned char data;
+
+    if (Motor_State == STOP) {
+        data = 0xFF; // 정지 시 모두 OFF
+        blink_cnt = 0;
+    }
+    else if (Motor_Speed >= 1 && Motor_Speed <= 8) {
+        data = (unsigned char)(0xFF >> Motor_Speed); // 1~8단 게이지
+        blink_cnt = 0;
+    }
+    else if (Motor_Speed == 9) {
+        blink_cnt++;
+        if (blink_cnt >= 300000) {
+            blink_cnt = 0;
+            blink_state ^= 1;
+        }
+        // 9단: 짝수(0xAA) <-> 홀수(0x55) 교대 점멸 (순간 전류 절감 + 8단과 구분)
+        data = blink_state ? 0xAA : 0x55;
+    }
+    else {
+        data = 0xFF;
+    }
+
+    if (data != prev_data) {
+        I2C1_SC16IS752_Write_GPIO(data);
+        prev_data = data;
+    }
+}
 
 static void Total_Init(void) {
 	Motor_Init();
@@ -281,6 +310,9 @@ static void Total_Init(void) {
 	Safe_Key_Init();
 	Ext_LED_Init();
 	Buzzer_Init();
+	I2C1_SC16IS752_Init(100000);
+    I2C1_SC16IS752_Config_GPIO(0xFF);
+    I2C1_SC16IS752_Write_GPIO(0xFF);
 }
 
 static void Sys_Init(int baud) 
@@ -303,6 +335,7 @@ void Op_Handler(){
 	volatile int i;
     LED_Display(LED_State);
 	Ext_LED_Display();
+	I2C_LED_Display();
 
 	if (Motor_State == 0) {
 		Motor_Stop();
