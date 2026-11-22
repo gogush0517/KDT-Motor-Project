@@ -50,7 +50,7 @@ extern void I2C1_SC16IS752_Write_Reg(unsigned int addr, unsigned int data);
 extern void I2C1_SC16IS752_Config_GPIO(unsigned int config);
 extern void I2C1_SC16IS752_Write_GPIO(unsigned int data);
 
-extern void TIM3_Out_Init(void);
+//extern void TIM3_Out_Init(void);
 extern void TIM3_Out_Freq_Generation(unsigned short freq);
 extern void TIM3_Out_Stop(void);
 
