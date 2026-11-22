@@ -1,10 +1,5 @@
 #include "device_driver.h"
 
-#define TIM2_TICK         	(20) 					// usec
-#define TIM2_FREQ 	  		(1000000./TIM2_TICK)	// Hz
-#define TIME2_PLS_OF_1ms  	(1000./TIM2_TICK)
-#define TIM2_MAX	  		(0xffffffffu)
-
 void TIM2_Stopwatch_Start(void)
 {
 	Macro_Set_Bit(RCC->APB1ENR, 0);
@@ -41,11 +36,6 @@ void TIM2_Delay(int time)
 	while(Macro_Check_Bit_Clear(TIM2->SR, 0));
 	Macro_Clear_Bit(TIM2->CR1, 0);
 }
-
-#define TIM4_TICK	  		(20) 					// usec
-#define TIM4_FREQ 	  		(1000000./TIM4_TICK) 	// Hz
-#define TIME4_PLS_OF_1ms  	(1000./TIM4_TICK)
-#define TIM4_MAX	  		(0xffffu)
 
 void TIM4_Repeat(int time)
 {
