@@ -15,7 +15,6 @@ extern volatile int Uart_Pressed;
 extern volatile unsigned char Uart_Data;
 extern volatile int TIM4_Expired;
 extern volatile int Key_Long_Pressed;
-extern volatile int Safe_Key;
 extern volatile int Motor_State;
 extern volatile int Motor_Speed;
 

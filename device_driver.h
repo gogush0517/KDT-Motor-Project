@@ -6,15 +6,11 @@
 // Uart.c
 
 extern void Uart2_Init(int baud);
-extern char Uart2_Get_Char(void);
-extern char Uart2_Get_Pressed(void);
 extern void Uart2_RX_Interrupt_Enable(int en);
 
 // Led.c
 
 extern void LED_Init(void);
-extern void LED_On(void);
-extern void LED_Off(void);
 extern void LED_Display(int on);
 
 // Clock.c
@@ -23,22 +19,9 @@ extern void Clock_Init(void);
 
 // Key.c
 
-extern void Key_Poll_Init(void);
-extern int Key_Get_Pressed(void);
-extern void Key_Wait_Key_Released(void);
-extern void Key_Wait_Key_Pressed(void);
 extern void Key_ISR_Enable(int en);
 
 // Timer.c
-
-extern void TIM2_Delay(int time);
-extern void TIM2_Stopwatch_Start(void);
-extern unsigned int TIM2_Stopwatch_Stop(void);
-extern void TIM4_Repeat(int time);
-extern int TIM4_Check_Timeout(void);
-extern void TIM4_Stop(void);
-extern void TIM4_Change_Value(int time);
-extern void TIM4_Repeat_Interrupt_Enable(int en, int time);
 
 // i2c.c
 
@@ -51,8 +34,6 @@ extern void I2C1_SC16IS752_Config_GPIO(unsigned int config);
 extern void I2C1_SC16IS752_Write_GPIO(unsigned int data);
 
 // motor.c
-#define	PA0	(0)
-#define PA1 (1)
 
 #define STOP	(0)
 #define CW		(1)
@@ -65,7 +46,6 @@ extern void I2C1_SC16IS752_Write_GPIO(unsigned int data);
 
 #define TIM2_TICK         	(1)
 #define TIM2_FREQ 	  		(1000000./TIM2_TICK)
-#define TIME2_PLS_OF_1ms  	(1000./TIM2_TICK)
 #define TIM2_MAX	  		(49)
 
 #define BASE  (300)
@@ -74,7 +54,6 @@ extern void Uart_Check(void);
 extern void Buzzer_On(int freq);
 extern void Buzzer_Off(void);
 extern void Buzzer_Beep(int freq, int ms);
-extern void Buzzer_Beep2(unsigned char tone, int duration);
 extern void Play_Song(void);
 extern void Key_Check(void);
 extern void Safe_Key_Reload(void);

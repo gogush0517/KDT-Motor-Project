@@ -35,18 +35,6 @@ void Uart2_Init(int baud)
   USART2->CR3 = 0;
 }
 
-char Uart2_Get_Char(void)
-{
-  while(!Macro_Check_Bit_Set(USART2->SR, 5));
-  return USART2->DR;
-}
-
-char Uart2_Get_Pressed(void)
-{
-  if (Macro_Check_Bit_Set(USART2->SR, 5))  return USART2->DR;
-  return 0;
-}
-
 void Uart2_RX_Interrupt_Enable(int en)
 {
   if(en)

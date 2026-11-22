@@ -14,7 +14,6 @@ volatile int TIM4_Expired = 0;
 volatile int Key_Long_Pressed = 0;
 volatile int Secret_Key;
 
-volatile int Safe_Key;
 volatile int Safe_Key_Wait_Release = 0;
 volatile int Estop_Buzzer = 0;
 

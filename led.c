@@ -9,16 +9,6 @@ void LED_Init(void)
 	Macro_Clear_Bit(GPIOA->ODR, 5); 
 }
 
-void LED_On(void)
-{
-	Macro_Set_Bit(GPIOA->ODR, 5); 
-}
-
-void LED_Off(void)
-{
-	Macro_Clear_Bit(GPIOA->ODR, 5); 
-}
-
 void LED_Display(int on)
 {
 	Macro_Write_Block(GPIOA->ODR, 0x1, on & 0x1, 5);
