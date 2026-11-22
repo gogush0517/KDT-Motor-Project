@@ -72,27 +72,3 @@ void TIM4_Change_Value(int time)
 {
 	TIM4->ARR = TIME4_PLS_OF_1ms * time;
 }
-
-#define TIM3_FREQ 	  			(8000000.) 	      		// Hz
-#define TIM3_TICK	  			(1000000./TIM3_FREQ)	// usec
-#define TIME3_PLS_OF_1ms  		(1000./TIM3_TICK)
-
-void TIM3_Out_Freq_Generation(unsigned short freq)
-{
-	// Timer 주파수가 TIM3_FREQ가 되도록 PSC 설정
-	// 요청한 주파수가 되도록 ARR 설정
-	// Duty Rate 50%가 되도록 CCR3 설정
-	// Manual Update(UG 발생)
-	// Down Counter, Repeat Mode, Timer Start
-
-	TIM3->PSC = (unsigned int)(TIMXCLK/TIM3_FREQ + 0.5) - 1;
-	TIM3->ARR = (unsigned int)(TIM3_FREQ / freq + 0.5);
-	TIM3->CCR3 = TIM3->ARR / 2;
-	Macro_Set_Bit(TIM3->EGR, 0);
-	TIM3->CR1 = (0x1<<4)|(0x0<<3)|(0x1<<0);
-}
-
-void TIM3_Out_Stop(void)
-{
-	Macro_Clear_Bit(TIM3->CR1, 0);
-}

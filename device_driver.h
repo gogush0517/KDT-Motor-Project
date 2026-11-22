@@ -50,10 +50,6 @@ extern void I2C1_SC16IS752_Write_Reg(unsigned int addr, unsigned int data);
 extern void I2C1_SC16IS752_Config_GPIO(unsigned int config);
 extern void I2C1_SC16IS752_Write_GPIO(unsigned int data);
 
-//extern void TIM3_Out_Init(void);
-extern void TIM3_Out_Freq_Generation(unsigned short freq);
-extern void TIM3_Out_Stop(void);
-
 // motor.c
 #define	PA0	(0)
 #define PA1 (1)
@@ -71,6 +67,8 @@ extern void TIM3_Out_Stop(void);
 #define TIM2_FREQ 	  		(1000000./TIM2_TICK)
 #define TIME2_PLS_OF_1ms  	(1000./TIM2_TICK)
 #define TIM2_MAX	  		(49)
+
+#define BASE  (300)
 
 extern void Uart_Check(void);
 extern void Buzzer_On(int freq);

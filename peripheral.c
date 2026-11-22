@@ -21,7 +21,6 @@ volatile int Estop_Buzzer = 0;
 void Uart_Check(void) {
 	if(Uart_Pressed){
 		if(Uart_Data == SECRETCODE[Secret_Key]) {
-			printf("Secret Key %d pressed!\n", Secret_Key + 1);
 			Secret_Key++;
 			if(Secret_Key == sizeof(SECRETCODE) - 1) {
 				printf("Secret Key Activated!\n");
@@ -63,7 +62,6 @@ void Buzzer_Beep(int freq, int ms) {
 	for (i = 0; i < ms * 6000; i++); 
 	Buzzer_Off();
 }
-#define BASE  (250)
 
 void Play_Song() {
 	int i;
@@ -72,11 +70,9 @@ void Play_Song() {
 
 	const static unsigned short tone_value[] = {261,277,293,311,329,349,369,391,415,440,466,493,523,554,587,622,659,698,739,783,830,880,932,987};
 	const int song[][2] = {{E2,N8},{E2,N4},{E2,N4},{C2,N8},{E2,N4},{G2,N2},{G1,N2}};
-	const char * note_name[] = {"C1", "C1#", "D1", "D1#", "E1", "F1", "F1#", "G1", "G1#", "A1", "A1#", "B1", "C2", "C2#", "D2", "D2#", "E2", "F2", "F2#", "G2", "G2#", "A2", "A2#", "B2"};
 
 	for(i=0; i<(sizeof(song)/sizeof(song[0])); i++)
 	{
-		printf("%s ", note_name[song[i][0]]);
 		Buzzer_Beep(tone_value[song[i][0]], song[i][1]);
 		Buzzer_Beep(0, 20);
 	}
