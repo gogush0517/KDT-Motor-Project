@@ -293,6 +293,28 @@ void I2C_LED_Display(void) {
     }
 }
 
+void Motor_Action(void) {
+	volatile int i;
+
+	if (Motor_State == 0) {
+		Motor_Stop();
+	}
+	else if (Motor_State == 1) {
+		if (TIM2->CCR2 != 0) {
+			Motor_Stop();
+			for(i=0; i<0x80000; i++) {}
+		}
+		Motor_Cw();
+	}
+	else if (Motor_State == 2) {
+		if (TIM2->CCR1 != 0) {
+			Motor_Stop();
+			for(i=0; i<0x80000; i++) {}
+		}
+		Motor_CCw();
+	}
+}
+
 void Total_Init(void) {
 	Motor_Init();
 	Key_Timer_Init();
@@ -324,26 +346,8 @@ void Event_Handler(void) {
 }
 
 void Op_Handler(void){
-	volatile int i;
     LED_Display(LED_State);
 	Ext_LED_Display();
 	I2C_LED_Display();
-
-	if (Motor_State == 0) {
-		Motor_Stop();
-	}
-	else if (Motor_State == 1) {
-		if (TIM2->CCR2 != 0) {
-			Motor_Stop();
-			for(i=0; i<0x80000; i++) {}
-		}
-		Motor_Cw();
-	}
-	else if (Motor_State == 2) {
-		if (TIM2->CCR1 != 0) {
-			Motor_Stop();
-			for(i=0; i<0x80000; i++) {}
-		}
-		Motor_CCw();
-	}
+	Motor_Action();
 }
