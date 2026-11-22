@@ -30,7 +30,7 @@ volatile unsigned char Uart_Data;
 volatile int TIM4_Expired = 0;      // 이번 누름에서 2초가 지났는지
 volatile int Key_Long_Pressed = 0;  // 버튼을 뗀 순간 확정한 결과
 volatile int Secret_Key;
-char Secret_Code[6] = "!sans";  // NULL 문자 포함
+char Secret_Code[5] = "sans";  // NULL 문자 포함
 void Uart_Check(void) {
 	if(Uart_Pressed){
 		if(Uart_Data == Secret_Code[Secret_Key]) {
@@ -42,7 +42,7 @@ void Uart_Check(void) {
 			}
 		}
 		else {
-			Secret_Key = 0;
+			Secret_Key = Uart_Data==Secret_Code[0] ? 1 : 0;
 		}
 	}
 	if(Uart_Pressed && (TIM2->CCR1 ^ TIM2->CCR2)) {
