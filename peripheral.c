@@ -1,7 +1,7 @@
 #include "device_driver.h"
 #include <stdio.h>
 
-#define SECRETCODE 	("sans")
+#define SECRETCODE 	("nintendo")
 
 int LED_State;
 volatile int Motor_State;
@@ -24,8 +24,8 @@ void Uart_Check(void) {
 			printf("Secret Key %d pressed!\n", Secret_Key + 1);
 			Secret_Key++;
 			if(Secret_Key == 4) {
-			printf("Secret Key Activated!\n");
-			Secret_Key = 0;
+				printf("Secret Key Activated!\n");
+				Secret_Key = 0;
 			}
 		}
 		else {
@@ -61,6 +61,22 @@ void Buzzer_Beep(int freq, int ms) {
 	Buzzer_On(freq);
 	for (i = 0; i < ms * 6000; i++); 
 	Buzzer_Off();
+}
+#define BASE  (250)
+
+void Play_Song() {
+	int i;
+	enum key{C1, C1_, D1, D1_, E1, F1, F1_, G1, G1_, A1, A1_, B1, C2, C2_, D2, D2_, E2, F2, F2_, G2, G2_, A2, A2_, B2};
+	enum note{N16=BASE/4, N8=BASE/2, N4=BASE, N2=BASE*2, N1=BASE*4};
+
+	const int song[][2] = {{E2,N8},{E2,N4},{E2,N4},{C2,N8},{E2,N4},{G2,N2},{G1,N2}};
+	const char * note_name[] = {"C1", "C1#", "D1", "D1#", "E1", "F1", "F1#", "G1", "G1#", "A1", "A1#", "B1", "C2", "C2#", "D2", "D2#", "E2", "F2", "F2#", "G2", "G2#", "A2", "A2#", "B2"};
+
+	for(i=0; i<(sizeof(song)/sizeof(song[0])); i++)
+	{
+		printf("%s ", note_name[song[i][0]]);
+		Buzzer_Beep(song[i][0], song[i][1]);
+	}
 }
 
 void Key_Check(void){
