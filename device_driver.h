@@ -58,15 +58,15 @@ extern void I2C1_SC16IS752_Write_GPIO(unsigned int data);
 #define CW		(1)
 #define	CCW		(2)
 
-#define TIM4_TICK	  		(50) 					// usec
-#define TIM4_FREQ 	  		(1000000./TIM4_TICK) 	// Hz
+#define TIM4_TICK	  		(50)
+#define TIM4_FREQ 	  		(1000000./TIM4_TICK)
 #define TIME4_PLS_OF_1ms  	(1000./TIM4_TICK)
 #define TIM4_PLS_OF_2s	  	(TIME4_PLS_OF_1ms*2000)
 
-#define TIM2_TICK         	(1) 					// usec
-#define TIM2_FREQ 	  		(1000000./TIM2_TICK)	// Hz
+#define TIM2_TICK         	(1)
+#define TIM2_FREQ 	  		(1000000./TIM2_TICK)
 #define TIME2_PLS_OF_1ms  	(1000./TIM2_TICK)
-#define TIM2_MAX	  		(49) //50카운트
+#define TIM2_MAX	  		(49)
 
 extern void Uart_Check(void);
 extern void Buzzer_On(int freq);

@@ -11,14 +11,14 @@ void Uart2_Init(int baud)
   unsigned int mant;
   unsigned int frac;
 
-  Macro_Set_Bit(RCC->AHB1ENR, 0);                   // PA2,3
-  Macro_Set_Bit(RCC->APB1ENR, 17);                  // USART2 ON
-  Macro_Write_Block(GPIOA->MODER, 0xf, 0xa, 4);     // PA2,3 => ALT
-  Macro_Write_Block(GPIOA->AFR[0], 0xff, 0x77, 8);  // PA2,3 => AF07
-  Macro_Write_Block(GPIOA->PUPDR, 0xf, 0x5, 4);     // PA2,3 => Pull-Up  
+  Macro_Set_Bit(RCC->AHB1ENR, 0);
+  Macro_Set_Bit(RCC->APB1ENR, 17);
+  Macro_Write_Block(GPIOA->MODER, 0xf, 0xa, 4);
+  Macro_Write_Block(GPIOA->AFR[0], 0xff, 0x77, 8);
+  Macro_Write_Block(GPIOA->PUPDR, 0xf, 0x5, 4);
 
   volatile unsigned int t = GPIOA->LCKR & 0x7FFF;
-  GPIOA->LCKR = (0x1<<16)|t|(0x3<<2);                // Lock PA2, 3 Configuration
+  GPIOA->LCKR = (0x1<<16)|t|(0x3<<2);
   GPIOA->LCKR = (0x0<<16)|t|(0x3<<2);
   GPIOA->LCKR = (0x1<<16)|t|(0x3<<2);
   t = GPIOA->LCKR;
