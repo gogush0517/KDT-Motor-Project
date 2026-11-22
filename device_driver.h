@@ -50,6 +50,10 @@ extern void I2C1_SC16IS752_Write_Reg(unsigned int addr, unsigned int data);
 extern void I2C1_SC16IS752_Config_GPIO(unsigned int config);
 extern void I2C1_SC16IS752_Write_GPIO(unsigned int data);
 
+extern void TIM3_Out_Init(void);
+extern void TIM3_Out_Freq_Generation(unsigned short freq);
+extern void TIM3_Out_Stop(void);
+
 // motor.c
 #define	PA0	(0)
 #define PA1 (1)
@@ -72,6 +76,7 @@ extern void Uart_Check(void);
 extern void Buzzer_On(int freq);
 extern void Buzzer_Off(void);
 extern void Buzzer_Beep(int freq, int ms);
+extern void Buzzer_Beep2(unsigned char tone, int duration);
 extern void Play_Song(void);
 extern void Key_Check(void);
 extern void Safe_Key_Reload(void);

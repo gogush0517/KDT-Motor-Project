@@ -23,7 +23,7 @@ void Uart_Check(void) {
 		if(Uart_Data == SECRETCODE[Secret_Key]) {
 			printf("Secret Key %d pressed!\n", Secret_Key + 1);
 			Secret_Key++;
-			if(Secret_Key == 4) {
+			if(Secret_Key == sizeof(SECRETCODE) - 1) {
 				printf("Secret Key Activated!\n");
 				Play_Song();
 				Secret_Key = 0;
@@ -64,6 +64,13 @@ void Buzzer_Beep(int freq, int ms) {
 	Buzzer_Off();
 }
 #define BASE  (250)
+void Buzzer_Beep2(unsigned char tone, int duration) {
+	const static unsigned short tone_value[] = {261,277,293,311,329,349,369,391,415,440,466,493,523,554,587,622,659,698,739,783,830,880,932,987};
+
+	TIM3_Out_Freq_Generation(tone_value[tone]);
+	TIM2_Delay(duration);
+	TIM3_Out_Stop();
+}
 
 void Play_Song() {
 	int i;
