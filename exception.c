@@ -15,6 +15,29 @@ extern volatile int Uart_Pressed;
 extern volatile unsigned char Uart_Data;
 extern volatile int TIM4_Expired;
 extern volatile int Key_Long_Pressed;
+extern volatile int Safe_Key;
+extern volatile int Motor_State;
+extern volatile int Motor_Speed;
+
+extern volatile int Estop_Buzzer;
+extern void Buzzer_On(int freq);
+
+void EXTI9_5_IRQHandler(void) {
+	if (Macro_Check_Bit_Set(EXTI->PR, 5)) {
+		for (volatile int d = 0; d < 1000; d++);
+
+		if (Motor_State != 0 && Macro_Check_Bit_Set(GPIOB->IDR, 5)) {
+			TIM2->CCR1 = 0;
+			TIM2->CCR2 = 0;
+			Motor_Speed = 1;
+			Motor_State = 0;
+			Estop_Buzzer = 1;
+		}
+		EXTI->PR = (0x1 << 5);
+	}
+	NVIC_ClearPendingIRQ((IRQn_Type)23);
+}
+
 
 void EXTI15_10_IRQHandler(void)
 {
@@ -81,5 +104,6 @@ void TIM4_IRQHandler(void)
 
         // 2초가 지났다는 사실 기록
         TIM4_Expired = 1;
+		Buzzer_On(2000);
     }
 }

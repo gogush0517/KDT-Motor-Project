@@ -39,3 +39,13 @@ extern int TIM4_Check_Timeout(void);
 extern void TIM4_Stop(void);
 extern void TIM4_Change_Value(int time);
 extern void TIM4_Repeat_Interrupt_Enable(int en, int time);
+
+// i2c.c
+
+#define SC16IS752_IODIR				0x0A
+#define SC16IS752_IOSTATE			0x0B
+
+extern void I2C1_SC16IS752_Init(unsigned int freq);
+extern void I2C1_SC16IS752_Write_Reg(unsigned int addr, unsigned int data);
+extern void I2C1_SC16IS752_Config_GPIO(unsigned int config);
+extern void I2C1_SC16IS752_Write_GPIO(unsigned int data);
