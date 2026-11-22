@@ -72,6 +72,7 @@ extern void Uart_Check(void);
 extern void Buzzer_On(int freq);
 extern void Buzzer_Off(void);
 extern void Buzzer_Beep(int freq, int ms);
+extern void Play_Song(void);
 extern void Key_Check(void);
 extern void Safe_Key_Reload(void);
 extern void Buzzer_Check(void);
