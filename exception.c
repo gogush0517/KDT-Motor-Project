@@ -88,9 +88,7 @@ void USART2_IRQHandler(void)
 	// int PA0 = Macro_Extract_Area(GPIOD->OTYPER, 0x1, 0); 
 	// int PA1 = Macro_Extract_Area(GPIOD->OTYPER, 0x1, 1); 
 
-	if(TIM2->CCR1 ^ TIM2->CCR2) {
-		Uart_Pressed = 1;
-	}
+	Uart_Pressed = 1;
 	Uart_Data = (unsigned char)USART2->DR;
 	NVIC_ClearPendingIRQ(38);
 }

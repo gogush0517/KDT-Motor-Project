@@ -28,19 +28,35 @@ volatile int Uart_Pressed;
 volatile unsigned char Uart_Data;
 volatile int TIM4_Expired = 0;      // 이번 누름에서 2초가 지났는지
 volatile int Key_Long_Pressed = 0;  // 버튼을 뗀 순간 확정한 결과
+volatile int Secret_Key;
+char Secret_Code[5] = "sans";  // NULL 문자 포함
 
 volatile int Safe_Key;
 volatile int Safe_Key_Wait_Release = 0;
 volatile int Estop_Buzzer = 0;
 
 void Uart_Check(void) {
-	if(Uart_Pressed) {
+	if(Uart_Pressed){
+		if(Uart_Data == Secret_Code[Secret_Key]) {
+			printf("Secret Key %d pressed!\n", Secret_Key + 1);
+			Secret_Key++;
+			if(Secret_Key == 4) {
+			printf("Secret Key Activated!\n");
+			Secret_Key = 0;
+			}
+		}
+		else {
+			Secret_Key = Uart_Data==Secret_Code[0] ? 1 : 0;
+		}
+	}
+	if(Uart_Pressed && (TIM2->CCR1 ^ TIM2->CCR2)) {
 		if(Uart_Data >= '1' && Uart_Data <= '9') { Motor_Speed = Uart_Data - '0'; }
 		else if(Uart_Data == 'S' || Uart_Data == 's'){ Motor_State = STOP; Motor_Speed = 1; }
 		else if(Uart_Data == 'F' || Uart_Data == 'f'){ Motor_State = CW; }
 		else if(Uart_Data == 'R' || Uart_Data == 'r'){ Motor_State = CCW; }
-	Uart_Pressed = 0;
 	}
+
+	Uart_Pressed = 0;
 }
 void Buzzer_On(int freq) { //50% 듀티 (무극성 부저 최대 음량)
 	if (freq <= 0) {
