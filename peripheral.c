@@ -25,6 +25,7 @@ void Uart_Check(void) {
 			Secret_Key++;
 			if(Secret_Key == 4) {
 				printf("Secret Key Activated!\n");
+				Play_Song();
 				Secret_Key = 0;
 			}
 		}
