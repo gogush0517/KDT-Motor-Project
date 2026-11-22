@@ -1,6 +1,8 @@
 #include "device_driver.h"
 #include <stdio.h>
 
+#define SECRETCODE 	("nintendo")
+
 int LED_State;
 volatile int Motor_State;
 volatile int Motor_Speed = 1;
@@ -8,27 +10,25 @@ volatile int Key_Pressed;
 volatile int Key_Released;
 volatile int Uart_Pressed;
 volatile unsigned char Uart_Data;
-volatile int TIM4_Expired = 0;      // 이번 누름에서 2초가 지났는지
-volatile int Key_Long_Pressed = 0;  // 버튼을 뗀 순간 확정한 결과
+volatile int TIM4_Expired = 0;
+volatile int Key_Long_Pressed = 0;
 volatile int Secret_Key;
-char Secret_Code[5] = "sans";  // NULL 문자 포함
 
-volatile int Safe_Key;
 volatile int Safe_Key_Wait_Release = 0;
 volatile int Estop_Buzzer = 0;
 
 void Uart_Check(void) {
 	if(Uart_Pressed){
-		if(Uart_Data == Secret_Code[Secret_Key]) {
-			printf("Secret Key %d pressed!\n", Secret_Key + 1);
+		if(Uart_Data == SECRETCODE[Secret_Key]) {
 			Secret_Key++;
-			if(Secret_Key == 4) {
-			printf("Secret Key Activated!\n");
-			Secret_Key = 0;
+			if(Secret_Key == sizeof(SECRETCODE) - 1) {
+				printf("Secret Key Activated!\n");
+				Play_Song();
+				Secret_Key = 0;
 			}
 		}
 		else {
-			Secret_Key = Uart_Data==Secret_Code[0] ? 1 : 0;
+			Secret_Key = Uart_Data==SECRETCODE[0] ? 1 : 0;
 		}
 	}
 	if(Uart_Pressed && (TIM2->CCR1 ^ TIM2->CCR2)) {
@@ -40,7 +40,7 @@ void Uart_Check(void) {
 
 	Uart_Pressed = 0;
 }
-void Buzzer_On(int freq) { //50% 듀티 (무극성 부저 최대 음량)
+void Buzzer_On(int freq) {
 	if (freq <= 0) {
 		TIM3->CCR2 = 0;
 		return;
@@ -62,9 +62,22 @@ void Buzzer_Beep(int freq, int ms) {
 	Buzzer_Off();
 }
 
-void Key_Check(void){
+void Play_Song() {
+	int i;
+	enum key{C1, C1_, D1, D1_, E1, F1, F1_, G1, G1_, A1, A1_, B1, C2, C2_, D2, D2_, E2, F2, F2_, G2, G2_, A2, A2_, B2};
+	enum note{N16=BASE/4, N8=BASE/2, N4=BASE, N2=BASE*2, N1=BASE*4};
 
-	// 버튼 ISR이 값을 바꾸는 중간에 읽지 않도록 잠깐 차단
+	const static unsigned short tone_value[] = {261,277,293,311,329,349,369,391,415,440,466,493,523,554,587,622,659,698,739,783,830,880,932,987};
+	const int song[][2] = {{E2,N8},{E2,N4},{E2,N4},{C2,N8},{E2,N4},{G2,N2},{G1,N2}};
+
+	for(i=0; i<(sizeof(song)/sizeof(song[0])); i++)
+	{
+		Buzzer_Beep(tone_value[song[i][0]], song[i][1]);
+		Buzzer_Beep(0, 20);
+	}
+}
+
+void Key_Check(void){
     NVIC_DisableIRQ(EXTI15_10_IRQn);
 
 	if(Key_Pressed) {
@@ -76,8 +89,8 @@ void Key_Check(void){
 		if(Key_Long_Pressed) {
 			if(Motor_State == STOP && Macro_Check_Bit_Set(GPIOB->IDR, 5)){
 				Motor_State = CW;
-				Macro_Clear_Bit(EXTI->IMR, 5); // 세이프키 뗄 때 채터링으로 꺼짐 방지
-				Safe_Key_Wait_Release = 1;     // 손 뗄 때까지 대기
+				Macro_Clear_Bit(EXTI->IMR, 5);
+				Safe_Key_Wait_Release = 1;
 
 			} 
 			else Motor_State = STOP;
@@ -97,7 +110,7 @@ void Safe_Key_Reload(void) {
 	if (Safe_Key_Wait_Release) {
 		if (Macro_Check_Bit_Clear(GPIOB->IDR, 5)) {
 			cnt++;
-			if (cnt > 300000) { // LOW 상태가 안정적으로 유지되면 다시준비
+			if (cnt > 300000) {
 				EXTI->PR = (0x1 << 5);
 				NVIC_ClearPendingIRQ((IRQn_Type)23);
 				Macro_Set_Bit(EXTI->IMR, 5);
@@ -106,7 +119,7 @@ void Safe_Key_Reload(void) {
 			}
 		}
 		else {
-			cnt = 0; // 아직 누르고 있거나 떼는 중 채터링 발생 시 리셋
+			cnt = 0;
 		}
 	}
 }
@@ -114,10 +127,9 @@ void Buzzer_Check(void) {
 	if (Estop_Buzzer) {
 		Estop_Buzzer = 0;
 
-		// 800Hz 낮은 경고음 3회 ("삐- 삐- 삐-")
 		for (int n = 0; n < 3; n++) {
 			Buzzer_Beep(800, 120);
-			for (volatile int d = 0; d < 600000; d++); // 소리 사이 짧은 간격
+			for (volatile int d = 0; d < 600000; d++);
 		}
 	}
 }
@@ -127,8 +139,7 @@ void Motor_Init(void) {
 		Macro_Write_Block(GPIOA->AFR[0],0xff,0x11,0);
 }
 
-void Key_Timer_Init(void) {	// TIM4
-	// TIM4 Clock On
+void Key_Timer_Init(void) {
 		Macro_Set_Bit(RCC->APB1ENR, 2);
 
 		TIM4->CR1 = (1<<4)|(1<<3);
@@ -136,19 +147,14 @@ void Key_Timer_Init(void) {	// TIM4
 		TIM4->ARR = TIM4_PLS_OF_2s;
 		Macro_Set_Bit(TIM4->EGR,0);
 
-		// TIM4 Pending Clear
-		// NVIC Pending Clear
 		Macro_Clear_Bit(TIM4->SR, 0);
 		NVIC_ClearPendingIRQ((IRQn_Type)30);
 
-		// TIM4 Interrupt Enable
-		// NVIC Interrupt Enable
 		Macro_Set_Bit(TIM4->DIER, 0);
 		NVIC_EnableIRQ((IRQn_Type)30);
 }
 
-void Motor_Timer_Init(void) {	// TIM2
-	// TIM2 Clock On
+void Motor_Timer_Init(void) {
 		Macro_Set_Bit(RCC->APB1ENR, 0);
 
 		TIM2->CR1 = (0<<4)|(0<<3);
@@ -173,15 +179,15 @@ void Ext_LED_Init(void) {
 	Macro_Set_Bit(RCC->AHB1ENR, 1);
 	Macro_Set_Bit(RCC->AHB1ENR, 2);
 
-	Macro_Write_Block(GPIOA->MODER, 0x3, 0x1, 9 * 2); // PA9 (D8, 초록)
+	Macro_Write_Block(GPIOA->MODER, 0x3, 0x1, 9 * 2);
 	Macro_Clear_Bit(GPIOA->OTYPER, 9);
 	Macro_Clear_Bit(GPIOA->ODR, 9);
 
-	Macro_Write_Block(GPIOC->MODER, 0x3, 0x1, 7 * 2); // PC7 (D9, 노랑)
+	Macro_Write_Block(GPIOC->MODER, 0x3, 0x1, 7 * 2);
 	Macro_Clear_Bit(GPIOC->OTYPER, 7);
 	Macro_Clear_Bit(GPIOC->ODR, 7);
 
-	Macro_Write_Block(GPIOA->MODER, 0x3, 0x1, 6 * 2); // PB6 (D10, 빨강)
+	Macro_Write_Block(GPIOA->MODER, 0x3, 0x1, 6 * 2);
 	Macro_Clear_Bit(GPIOA->OTYPER, 6);
 	Macro_Clear_Bit(GPIOA->ODR, 6);
 }
@@ -207,25 +213,20 @@ void Motor_CCw(){
 
 
 void Safe_Key_Init(void) {
-	// 1) GPIOB Clock On & PB5 Input Mode
 	Macro_Set_Bit(RCC->AHB1ENR, 1);
 	Macro_Write_Block(GPIOB->MODER, 0x3, 0x0, 5 * 2);
 
-	// 2) SYSCFG Clock On & EXTI5에 Port B(0x1) 연결
 	Macro_Set_Bit(RCC->APB2ENR, 14);
 	Macro_Write_Block(SYSCFG->EXTICR[1], 0xf, 0x1, 4);
 
-	// 3) Rising Edge(눌리는 순간)만 인터럽트 허용
 	Macro_Set_Bit(EXTI->RTSR, 5);
 	Macro_Clear_Bit(EXTI->FTSR, 5);
 
-	// 4) Pending Clear 및 인터럽트 Enable (EXTI9_5 = IRQ 23)
 	EXTI->PR = (0x1 << 5);
 	NVIC_ClearPendingIRQ((IRQn_Type)23);
 	Macro_Set_Bit(EXTI->IMR, 5);
 	NVIC_EnableIRQ((IRQn_Type)23);
 
-	// 5) 인터럽트 우선순위 설정 (0: 최고, 15: 최하)
 	NVIC_SetPriority((IRQn_Type)23, 0);
 }
 
@@ -241,27 +242,21 @@ void Ext_LED_Display(void) {
 	else Macro_Clear_Bit(GPIOA->ODR, 6);
 }
 void Buzzer_Init(void) {
-	// GPIOA, TIM3 클럭 ON
 	Macro_Set_Bit(RCC->AHB1ENR, 0);
 	Macro_Set_Bit(RCC->APB1ENR, 1);
 
-	// PA7을 Alternate Function(AF2: TIM3_CH2)으로 설정
 	Macro_Write_Block(GPIOA->MODER, 0x3, 0x2, 7 * 2);
 	Macro_Write_Block(GPIOA->AFR[0], 0xf, 0x2, 7 * 4);
 
-	// 업카운팅, 연속 모드, 1틱 = 1us (1MHz)
 	TIM3->CR1 = (0 << 4) | (0 << 3);
 	TIM3->PSC = (unsigned int)(TIMXCLK / 1000000.0 + 0.5) - 1;
-	TIM3->ARR = 999; // 기본 1kHz
+	TIM3->ARR = 999;
 
-	// CH2 PWM Mode 1 + Preload Enable
 	TIM3->CCMR1 = (0x6 << 12) | (0x1 << 11);
 
-	// 초기 상태 무음(듀티 0%) 및 CH2 출력 활성화
 	TIM3->CCR2 = 0;
 	Macro_Write_Block(TIM3->CCER, 0x3, 0x1, 4);
 
-	// 설정 반영 및 타이머 시작
 	Macro_Set_Bit(TIM3->EGR, 0);
 	Macro_Set_Bit(TIM3->CR1, 0);
 }
@@ -273,11 +268,11 @@ void I2C_LED_Display(void) {
     unsigned char data;
 
     if (Motor_State == STOP) {
-        data = 0xFF; // 정지 시 모두 OFF
+        data = 0xFF;
         blink_cnt = 0;
     }
     else if (Motor_Speed >= 1 && Motor_Speed <= 8) {
-        data = (unsigned char)(0xFF >> Motor_Speed); // 1~8단 게이지
+        data = (unsigned char)(0xFF >> Motor_Speed);
         blink_cnt = 0;
     }
     else if (Motor_Speed == 9) {
@@ -286,7 +281,6 @@ void I2C_LED_Display(void) {
             blink_cnt = 0;
             blink_state ^= 1;
         }
-        // 9단: 짝수(0xAA) <-> 홀수(0x55) 교대 점멸 (순간 전류 절감 + 8단과 구분)
         data = blink_state ? 0xAA : 0x55;
     }
     else {
